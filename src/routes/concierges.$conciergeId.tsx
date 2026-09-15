@@ -1,8 +1,20 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { CalendarCheck, Heart, MapPin, MessagesSquare, ShieldCheck } from "lucide-react";
+import {
+  CalendarCheck,
+  Clock,
+  Globe2,
+  Heart,
+  MapPin,
+  MessagesSquare,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AvailabilityBadge } from "@/components/common/AvailabilityBadge";
+import { ConciergeTypeBadge } from "@/components/common/ConciergeTypeBadge";
+import { PRICING_EXPLANATION, PricingExplainer, pricingLabel } from "@/components/common/PricingNote";
 import { Rating, StarRow } from "@/components/common/Rating";
 import { VerifiedBadge } from "@/components/common/VerifiedBadge";
 import { SiteLayout } from "@/components/layout/SiteLayout";
@@ -12,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getConciergeById } from "@/data/concierges";
 import { useFavorites } from "@/hooks/useFavorites";
 import { formatCount, formatPrice, joinWithDot } from "@/lib/format";
+import type { Concierge } from "@/types";
 
 export const Route = createFileRoute("/concierges/$conciergeId")({
   loader: ({ params }) => {
@@ -22,12 +35,16 @@ export const Route = createFileRoute("/concierges/$conciergeId")({
   head: ({ loaderData }) => {
     if (!loaderData) {
       return {
-        meta: [{ title: "Concierge not found — Conciergo" }, { name: "robots", content: "noindex" }],
+        meta: [
+          { title: "Concierge not found — Conciergo" },
+          { name: "robots", content: "noindex" },
+        ],
       };
     }
     const { concierge } = loaderData;
-    const title = `${concierge.name} — concierge in ${concierge.city} | Conciergo`;
-    const description = `${concierge.headline} Speaks ${joinWithDot(concierge.languages)}. Start a conversation before you commit.`;
+    const kind = concierge.type === "company" ? "concierge company" : "concierge";
+    const title = `${concierge.name} — ${kind} in ${concierge.city} | Conciergo`;
+    const description = `${concierge.headline} Speaks ${joinWithDot(concierge.languages)}. Start a conversation and receive a custom proposal.`;
     return {
       meta: [
         { title },
@@ -40,18 +57,22 @@ export const Route = createFileRoute("/concierges/$conciergeId")({
   component: ConciergeProfilePage,
 });
 
-function ConversationPanel({ name, price, currency }: { name: string; price: number; currency: string }) {
+function ConversationPanel({ concierge }: { concierge: Concierge }) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const firstName =
+    concierge.type === "company"
+      ? (concierge.contactName?.split(" ")[0] ?? "the team")
+      : concierge.name.split(" ")[0];
 
   return (
     <div className="surface-card p-6">
-      <p className="text-[13px] text-muted-foreground">Services start from</p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">
-        {formatPrice(price, currency)}
+      <p className="text-[13px] text-muted-foreground">Pricing</p>
+      <p className="mt-1 text-[20px] font-semibold text-foreground">
+        {pricingLabel(concierge.pricingModel)}
       </p>
       <p className="mt-2 text-[13px] leading-relaxed text-subtle-foreground">
-        Final pricing is agreed in a written proposal after you describe your trip.
+        {PRICING_EXPLANATION}
       </p>
 
       <form
@@ -63,12 +84,12 @@ function ConversationPanel({ name, price, currency }: { name: string; price: num
             setSending(false);
             setMessage("");
             toast.success("Message drafted", {
-              description: `Messaging isn't connected yet, so this request to ${name} was not sent.`,
+              description: `Messaging isn't connected yet, so this request to ${concierge.name} was not sent.`,
             });
           }, 600);
         }}
       >
-        <Label htmlFor="conversation-message">Tell {name.split(" ")[0]} what you need</Label>
+        <Label htmlFor="conversation-message">Tell {firstName} what you need</Label>
         <Textarea
           id="conversation-message"
           rows={4}
@@ -83,6 +104,10 @@ function ConversationPanel({ name, price, currency }: { name: string; price: num
       </form>
 
       <ul className="mt-6 space-y-2.5 border-t border-border pt-5 text-[13px] text-muted-foreground">
+        <li className="flex items-start gap-2">
+          <Clock className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden="true" />
+          Typically replies {concierge.responseTime}
+        </li>
         <li className="flex items-start gap-2">
           <MessagesSquare className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden="true" />
           No commitment until you accept a proposal
@@ -100,6 +125,7 @@ function ConciergeProfilePage() {
   const { concierge } = Route.useLoaderData();
   const { isFavorite, toggle } = useFavorites();
   const saved = isFavorite(concierge.id);
+  const isCompany = concierge.type === "company";
 
   return (
     <SiteLayout>
@@ -112,10 +138,18 @@ function ConciergeProfilePage() {
           <div className="mt-5 flex flex-col gap-6 sm:flex-row sm:items-start">
             <img
               src={concierge.avatar}
-              alt={`${concierge.name}, concierge in ${concierge.city}`}
+              alt={
+                isCompany
+                  ? `${concierge.name} logo`
+                  : `${concierge.name}, concierge in ${concierge.city}`
+              }
               width={640}
               height={640}
-              className="size-24 rounded-2xl object-cover md:size-28"
+              className={
+                isCompany
+                  ? "size-24 rounded-2xl border border-border bg-background object-contain p-2 md:size-28"
+                  : "size-24 rounded-2xl object-cover md:size-28"
+              }
             />
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3">
@@ -123,6 +157,7 @@ function ConciergeProfilePage() {
                   {concierge.name}
                 </h1>
                 {concierge.verified ? <VerifiedBadge withLabel /> : null}
+                <ConciergeTypeBadge type={concierge.type} variant="chip" />
               </div>
               <p className="mt-2 text-[15px] text-muted-foreground">{concierge.headline}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted-foreground">
@@ -131,8 +166,25 @@ function ConciergeProfilePage() {
                   {concierge.city}, {concierge.country}
                 </span>
                 <Rating value={concierge.rating} reviewCount={concierge.reviewCount} />
-                <span>{formatCount(concierge.tripsCompleted)} trips completed</span>
+                <span>{concierge.yearsExperience} years of experience</span>
+                <AvailabilityBadge availableNow={concierge.availableNow} />
               </div>
+              {isCompany ? (
+                <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-subtle-foreground">
+                  {concierge.contactName ? (
+                    <span>Main contact: {concierge.contactName}</span>
+                  ) : null}
+                  {concierge.teamSize ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="size-4" aria-hidden="true" />
+                      Team of {concierge.teamSize}
+                    </span>
+                  ) : null}
+                  {concierge.groupCapacity ? (
+                    <span>Handles groups of up to {concierge.groupCapacity}</span>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
             <Button
               variant="secondary"
@@ -141,7 +193,7 @@ function ConciergeProfilePage() {
               className="self-start"
             >
               <Heart className={saved ? "fill-brand-500 text-brand-500" : ""} />
-              {saved ? "Saved" : "Save"}
+              {saved ? "Saved to favourites" : "Save to favourites"}
             </Button>
           </div>
         </div>
@@ -151,7 +203,9 @@ function ConciergeProfilePage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:gap-14">
           <div className="space-y-12">
             <section>
-              <h2 className="text-[18px] font-semibold text-foreground">About</h2>
+              <h2 className="text-[18px] font-semibold text-foreground">
+                {isCompany ? "About the company" : "About"}
+              </h2>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
                 {concierge.about}
               </p>
@@ -159,20 +213,31 @@ function ConciergeProfilePage() {
 
             <section>
               <h2 className="text-[18px] font-semibold text-foreground">Services offered</h2>
+              <p className="mt-2 text-[13px] text-subtle-foreground">
+                Each service is scoped and priced in your proposal.
+              </p>
               <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border">
                 {concierge.services.map((service) => (
-                  <li
-                    key={service.id}
-                    className="flex items-center justify-between gap-4 bg-surface px-5 py-4"
-                  >
-                    <span className="text-[14px] font-medium text-foreground">{service.name}</span>
-                    <span className="text-[14px] text-muted-foreground">
-                      From {formatPrice(service.fromPrice, concierge.currency)}
-                    </span>
+                  <li key={service.id} className="bg-surface px-5 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-[14px] font-medium text-foreground">{service.name}</span>
+                      <span className="text-[13px] text-muted-foreground">
+                        {service.fixedPrice !== undefined
+                          ? `${formatPrice(service.fixedPrice, concierge.currency)} fixed`
+                          : "Custom quote"}
+                      </span>
+                    </div>
+                    {service.description ? (
+                      <p className="mt-1.5 max-w-xl text-[13px] leading-relaxed text-subtle-foreground">
+                        {service.description}
+                      </p>
+                    ) : null}
                   </li>
                 ))}
               </ul>
             </section>
+
+            <PricingExplainer />
 
             <section>
               <h2 className="text-[18px] font-semibold text-foreground">Languages</h2>
@@ -189,8 +254,30 @@ function ConciergeProfilePage() {
             </section>
 
             <section>
+              <h2 className="text-[18px] font-semibold text-foreground">Where they work</h2>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {concierge.coverage.map((place) => (
+                  <li
+                    key={place}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] text-muted-foreground"
+                  >
+                    <Globe2 className="size-3.5 text-subtle-foreground" aria-hidden="true" />
+                    {place}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section>
               <h2 className="text-[18px] font-semibold text-foreground">Experience</h2>
-              <ol className="mt-4 space-y-5 border-l border-border pl-5">
+              <p className="mt-2 text-[13px] text-subtle-foreground">
+                {formatCount(concierge.tripsCompleted)} Conciergo bookings completed · active{" "}
+                {concierge.lastActiveDaysAgo === 0
+                  ? "today"
+                  : `${concierge.lastActiveDaysAgo} day${concierge.lastActiveDaysAgo === 1 ? "" : "s"} ago`}{" "}
+                (sample data)
+              </p>
+              <ol className="mt-5 space-y-5 border-l border-border pl-5">
                 {concierge.experience.map((entry) => (
                   <li key={`${entry.role}-${entry.period}`} className="relative">
                     <span
@@ -243,6 +330,9 @@ function ConciergeProfilePage() {
               <h2 className="text-[18px] font-semibold text-foreground">
                 Reviews ({concierge.reviewCount})
               </h2>
+              <p className="mt-2 text-[13px] text-subtle-foreground">
+                Sample reviews shown while the platform is in preview.
+              </p>
               <div className="mt-4 space-y-4">
                 {concierge.reviews.map((review) => (
                   <article key={`${review.author}-${review.date}`} className="surface-card p-5">
@@ -251,7 +341,10 @@ function ConciergeProfilePage() {
                         <p className="text-[14px] font-semibold text-foreground">{review.author}</p>
                         <p className="text-[13px] text-subtle-foreground">{review.authorRole}</p>
                       </div>
-                      <StarRow value={review.rating} />
+                      <span className="inline-flex items-center gap-2">
+                        <StarRow value={review.rating} />
+                        <span className="sr-only">Rated {review.rating} out of 5</span>
+                      </span>
                     </div>
                     <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
                       {review.body}
@@ -266,11 +359,7 @@ function ConciergeProfilePage() {
           </div>
 
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <ConversationPanel
-              name={concierge.name}
-              price={concierge.fromPrice}
-              currency={concierge.currency}
-            />
+            <ConversationPanel concierge={concierge} />
           </div>
         </div>
       </div>
