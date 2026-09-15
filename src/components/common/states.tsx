@@ -102,3 +102,32 @@ export function ConciergeGridSkeleton({ count = 4 }: { count?: number }) {
     </div>
   );
 }
+
+/** Empty state for marketplace result lists. */
+export function EmptyResults({ onReset }: { onReset?: () => void }) {
+  return <NoResultsState onReset={onReset} />;
+}
+
+/** Skeleton placeholder shown while results are being prepared. */
+export function LoadingResults({
+  view = "grid",
+  count = 6,
+}: {
+  view?: "grid" | "list";
+  count?: number;
+}) {
+  return (
+    <div
+      className={
+        view === "grid" ? "grid gap-5 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-4"
+      }
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <span className="sr-only">Loading concierges</span>
+      {Array.from({ length: count }).map((_, index) => (
+        <ConciergeCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
