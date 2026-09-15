@@ -1,15 +1,24 @@
 import { concierges } from "@/data/concierges";
 import type { Concierge } from "@/types";
 
-import { PRICE_CEILING, type ExploreSearch } from "./search-params";
+import type { ExploreSearch } from "./search-params";
 
-export function filterConcierges(search: ExploreSearch, source: Concierge[] = concierges) {
+/**
+ * Deterministic local filtering and ranking. A future recommendation service
+ * can replace the "recommended" branch without touching the UI.
+ */
+export function filterConcierges(
+  search: ExploreSearch,
+  source: Concierge[] = concierges,
+): Concierge[] {
   const destination = search.destination.trim().toLowerCase();
   const query = search.q.trim().toLowerCase();
 
   const results = source.filter((concierge) => {
     if (destination) {
-      const haystack = `${concierge.city} ${concierge.country}`.toLowerCase();
+      const haystack = [concierge.city, concierge.country, ...concierge.coverage]
+        .join(" ")
+        .toLowerCase();
       const matches = destination
         .split(",")
         .map((part) => part.trim())
@@ -21,9 +30,11 @@ export function filterConcierges(search: ExploreSearch, source: Concierge[] = co
     if (query) {
       const haystack = [
         concierge.name,
+        concierge.contactName ?? "",
         concierge.headline,
         concierge.city,
         concierge.country,
+        ...concierge.coverage,
         ...concierge.languages,
         ...concierge.services.map((service) => service.name),
       ]
@@ -42,8 +53,10 @@ export function filterConcierges(search: ExploreSearch, source: Concierge[] = co
       if (!speaks) return false;
     }
 
+    if (search.types.length > 0 && !search.types.includes(concierge.type)) return false;
     if (search.minRating > 0 && concierge.rating < search.minRating) return false;
-    if (search.maxPrice < PRICE_CEILING && concierge.fromPrice > search.maxPrice) return false;
+    if (search.minExperience > 0 && concierge.yearsExperience < search.minExperience) return false;
+    if (search.corporate && !concierge.corporateReady) return false;
     if (search.verified && !concierge.verified) return false;
     if (search.availableNow && !concierge.availableNow) return false;
 
@@ -53,16 +66,18 @@ export function filterConcierges(search: ExploreSearch, source: Concierge[] = co
   const sorted = [...results];
   switch (search.sort) {
     case "rating":
-      sorted.sort((a, b) => b.rating - a.rating);
+      sorted.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
       break;
-    case "price-low":
-      sorted.sort((a, b) => a.fromPrice - b.fromPrice);
+    case "reviews":
+      sorted.sort((a, b) => b.reviewCount - a.reviewCount);
       break;
-    case "price-high":
-      sorted.sort((a, b) => b.fromPrice - a.fromPrice);
+    case "experience":
+      sorted.sort(
+        (a, b) => b.yearsExperience - a.yearsExperience || b.tripsCompleted - a.tripsCompleted,
+      );
       break;
-    case "trips":
-      sorted.sort((a, b) => b.tripsCompleted - a.tripsCompleted);
+    case "recent":
+      sorted.sort((a, b) => a.lastActiveDaysAgo - b.lastActiveDaysAgo);
       break;
     default:
       sorted.sort(
