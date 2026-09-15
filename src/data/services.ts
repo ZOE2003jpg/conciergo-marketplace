@@ -65,4 +65,8 @@ export const languageOptions = [
   "Portuguese",
   "Hindi",
   "Spanish",
+  "Cantonese",
+  "Igbo",
+  "Hausa",
+  "Twi",
 ];
