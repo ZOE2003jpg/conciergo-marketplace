@@ -33,7 +33,7 @@ export function EmptyState({ title, description, icon, action, className }: Stat
   );
 }
 
-export function NoResultsState({ onReset }: { onReset?: () => void }) {
+export function NoResultsState({ onReset }: { onReset?: (() => void) | undefined }) {
   return (
     <EmptyState
       icon={<SearchX className="size-5" aria-hidden="true" />}
@@ -104,7 +104,7 @@ export function ConciergeGridSkeleton({ count = 4 }: { count?: number }) {
 }
 
 /** Empty state for marketplace result lists. */
-export function EmptyResults({ onReset }: { onReset?: () => void }) {
+export function EmptyResults({ onReset }: { onReset?: (() => void) | undefined }) {
   return <NoResultsState onReset={onReset} />;
 }
 

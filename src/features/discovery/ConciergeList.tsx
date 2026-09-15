@@ -6,7 +6,7 @@ interface ConciergeListProps {
   concierges: Concierge[];
   view: "grid" | "list";
   loading?: boolean;
-  onReset?: () => void;
+  onReset?: (() => void) | undefined;
   isFavorite: (id: string) => boolean;
   onToggleFavorite: (id: string) => void;
 }
