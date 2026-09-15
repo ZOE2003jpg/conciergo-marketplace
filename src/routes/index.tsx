@@ -1,24 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { SiteLayout } from "@/components/layout/SiteLayout";
+import { HeroSection } from "@/features/home/HeroSection";
+import {
+  BecomeConciergeSection,
+  CorporateSection,
+  FeaturedConcierges,
+  FinalCta,
+  HowItWorksPreview,
+  PopularDestinations,
+  ServiceCategoriesSection,
+  TestimonialsSection,
+  WhyConciergo,
+} from "@/features/home/HomeSections";
+
+const title = "Conciergo — Find a trusted local concierge wherever you go";
+const description =
+  "Connect with trusted local concierges for airport pickup, transportation, business travel, translation and local assistance at your destination.";
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+    ],
+  }),
+  component: HomePage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function HomePage() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <SiteLayout>
+      <HeroSection />
+      <PopularDestinations />
+      <FeaturedConcierges />
+      <HowItWorksPreview />
+      <ServiceCategoriesSection />
+      <CorporateSection />
+      <WhyConciergo />
+      <BecomeConciergeSection />
+      <TestimonialsSection />
+      <FinalCta />
+    </SiteLayout>
   );
 }
