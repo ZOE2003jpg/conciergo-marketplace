@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -34,6 +35,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <ThemeToggle />
           <Button variant="ghost" asChild>
             <Link to="/login">Log in</Link>
           </Button>
@@ -42,12 +44,14 @@ export function SiteHeader() {
           </Button>
         </div>
 
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild className="lg:hidden">
-            <Button variant="secondary" size="icon" aria-label="Open menu">
-              <Menu />
-            </Button>
-          </SheetTrigger>
+        <div className="flex items-center gap-1 lg:hidden">
+          <ThemeToggle />
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="secondary" size="icon" aria-label="Open menu">
+                <Menu />
+              </Button>
+            </SheetTrigger>
           <SheetContent side="right" className="w-[86vw] max-w-sm p-0 [&>button]:hidden">
             <div className="flex h-full flex-col">
               <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -106,8 +110,9 @@ export function SiteHeader() {
                 </Button>
               </div>
             </div>
-          </SheetContent>
-        </Sheet>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
