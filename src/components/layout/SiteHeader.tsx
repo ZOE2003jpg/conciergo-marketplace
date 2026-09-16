@@ -109,8 +109,9 @@ export function SiteHeader() {
                 </Button>
               </div>
             </div>
-          </SheetContent>
-        </Sheet>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
